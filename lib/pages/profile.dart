@@ -1,13 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-void main() {
-  runApp(MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: Profile(), // Используем виджет Profile в качестве главного виджета
-  ));
-}
-
 class Profile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

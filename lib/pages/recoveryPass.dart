@@ -3,7 +3,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 
 
-class MainScreen extends StatelessWidget {
+class RecoveryPass extends StatelessWidget {
+  const RecoveryPass({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -127,28 +129,28 @@ class MainScreen extends StatelessWidget {
               horizontal: 15.0, vertical: 8.0
           ),
           child: GNav(
-              selectedIndex: 1,
-              gap: 8,
-              backgroundColor: Color(0xFF122790),
-              color: Colors.white,
-              activeColor: Colors.white,
-              tabBackgroundColor: Color(0x5000AAFF),
-              padding: EdgeInsets.all(16),
-              tabBorderRadius: 16,
-              tabs: [
-                GButton(
-                  icon: Icons.person,
-                  text: 'Профиль',
-                ),
-                GButton(
-                  icon: Icons.business,
-                  text: 'Отделения',
-                ),
-                GButton(
-                  icon: Icons.headset_mic,
-                  text: 'Поддержка',
-                ),
-              ]
+            selectedIndex: 1,
+            gap: 8,
+            backgroundColor: Color(0xFF122790),
+            color: Colors.white,
+            activeColor: Colors.white,
+            tabBackgroundColor: Color(0x5000AAFF),
+            padding: EdgeInsets.all(16),
+            tabBorderRadius: 16,
+            tabs: [
+              GButton(
+                icon: Icons.person,
+                text: 'Профиль',
+              ),
+              GButton(
+                icon: Icons.business,
+                text: 'Отделения',
+              ),
+              GButton(
+                icon: Icons.headset_mic,
+                text: 'Поддержка',
+              ),
+            ]
           ),
         ),
       ),
