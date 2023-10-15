@@ -153,11 +153,7 @@ class Registration extends StatelessWidget {
 
                           child: GestureDetector(
                             onTap: () =>
-                                Navigator.push(context,
-                                  MaterialPageRoute(
-                                      builder: (context) => MainScreen()
-                                  ),
-                                ),
+                                Navigator.pushReplacementNamed(context, '/main'),
                             child: Container(
                               width: 74, // Установите желаемую ширину
                               height: 40, // Установите желаемую высоту
@@ -177,10 +173,10 @@ class Registration extends StatelessWidget {
                     child: InkWell(
                       onTap: () {
                         // Переход на другую страницу
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => RecoveryPass()),
-                        );
+                        // Navigator.push(
+                        //   context,
+                        //   MaterialPageRoute(builder: (context) => RecoveryPass()),
+                        // );
                       },
                       child: RichText(
                         text: TextSpan(
@@ -200,10 +196,10 @@ class Registration extends StatelessWidget {
                               recognizer: TapGestureRecognizer()
                                 ..onTap = () {
                                   // Действие при нажатии на "логин"
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => RecoveryPass()),
-                                  );
+                                  // Navigator.push(
+                                  //   context,
+                                  //   MaterialPageRoute(builder: (context) => RecoveryPass()),
+                                  // );
                                 },
                             ),
                             const TextSpan(text: ' или ',
@@ -222,10 +218,10 @@ class Registration extends StatelessWidget {
                               recognizer: TapGestureRecognizer()
                                 ..onTap = () {
                                   // Действие при нажатии на "пароль"
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => RecoveryPass()),
-                                  );
+                                  // Navigator.push(
+                                  //   context,
+                                  //   MaterialPageRoute(builder: (context) => RecoveryPass()),
+                                  // );
                                 },
                             ),
                           ],

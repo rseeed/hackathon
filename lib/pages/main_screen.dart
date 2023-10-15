@@ -1,9 +1,82 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:google_nav_bar/google_nav_bar.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'dart:math';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:curved_navigation_bar/curved_navigation_bar.dart';
+import 'package:hackathon/main.dart';
+import 'package:hackathon/pages/profile.dart';
 
 
 class MainScreen extends StatelessWidget {
+  late String lat;
+  late String long;
+  List<dynamic> atms = [];
+
+  Future<Position> _getCurrentLocation() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return Future.error('Вы отклонили геолокацию!');
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return Future.error('Вы отклонили геолокацию!');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return Future.error('Вы отклонили геолокацию!');
+    }
+    return await Geolocator.getCurrentPosition();
+  }
+
+  Future<String> getAddress(double latitude, double longitude) async {
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
+      Placemark placemark = placemarks.first;
+      String address = '${placemark.street}, ${placemark.locality}, ${placemark.postalCode}, ${placemark.country}';
+      return address;
+    } catch (e) {
+      return 'Не удалось определить адрес: $e';
+    }
+  }
+
+  double toRadians(double degrees) {
+    return degrees * (pi / 180);
+  }
+
+  double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    const double radius = 6371;
+
+    double dLat = toRadians(lat2 - lat1);
+    double dLon = toRadians(lon2 - lon1);
+
+    double a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(toRadians(lat1)) * cos(toRadians(lat2)) *
+            sin(dLon / 2) * sin(dLon / 2);
+
+    double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    double distance = radius * c;
+
+    return distance;
+  }
+
+  Future<void> loadAtmsData() async {
+    try {
+      String jsonString = await rootBundle.loadString('assets/atms.json');
+      Map<String, dynamic> jsonData = json.decode(jsonString);
+      atms = jsonData['atms'];
+    } catch (e) {
+      print('Ошибка при загрузке данных: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -11,15 +84,15 @@ class MainScreen extends StatelessWidget {
       body: Stack(
         children: [
           Positioned(
-            top: 45, // Отступ сверху
+            top: 50, // Отступ сверху
             left: 20, // Отступ слева
-            child: SvgPicture.asset('assets/VTB_logo (2).svg', height: 30, width: 30,), // Путь к вашему первому изображению
+            child: SvgPicture.asset('assets/VTB_logo.svg', height: 30, width: 30,),
           ),
           Positioned(
-            top: 120, // Отступ сверху для поля ввода
+            top: 110, // Отступ сверху для поля ввода
             left: 20, // Отступ слева для поля ввода
             child: Container(
-              width: 330.0, // Ширина поля ввода
+              width: 350.0, // Ширина поля ввода
               child: Row(
                 children: [
                   Expanded(
@@ -29,7 +102,7 @@ class MainScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         border: Border.all(
-                          color: Color(0xFFD6D8DE),
+                          color: const Color(0xFFD6D8DE),
                           width: 1,
                         ),
                       ),
@@ -39,7 +112,7 @@ class MainScreen extends StatelessWidget {
                           contentPadding: EdgeInsets.only(left: 10, bottom: 10),
                           border: InputBorder.none,
                         ),
-                        style: TextStyle(color: Color(0xFF7B7E86), fontSize: 15),
+                        style: const TextStyle(color: Color(0xFF7B7E86), fontSize: 15),
                         obscureText: false,
                         onChanged: (value) {},
                         maxLines: 1, // Установите максимальное количество строк равным 1
@@ -48,8 +121,32 @@ class MainScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: 10), // Отступ между полем ввода и кнопкой
                   ElevatedButton(
-                    onPressed: () {
-                      // Действие при нажатии на кнопку "Подобрать"
+                    onPressed: () async {
+                      try {
+                        Position position = await _getCurrentLocation(); // Определение переменной position
+                        lat = position.latitude.toString();
+                        print(lat);
+                        long = position.longitude.toString();
+                        print(long);
+
+                        await loadAtmsData();
+                        atms.sort((a, b) {
+                          double distanceA = calculateDistance(position.latitude, position.longitude,
+                              a['latitude'], a['longitude']);
+                          double distanceB = calculateDistance(position.latitude, position.longitude,
+                              b['latitude'], b['longitude']);
+                          return distanceA.compareTo(distanceB);
+                        });
+                        for (int i = 0; i < min(atms.length, 10); i++) {
+                          print('---');
+                          print('Банкомат ${i + 1}:');
+                          print('Адрес: ${atms[i]['address']}');
+                          print('Расстояние: ${calculateDistance(position.latitude, position.longitude,
+                              atms[i]['latitude'], atms[i]['longitude'])} км');
+                        }
+                      } catch (e) {
+                        print('Ошибка: $e');
+                      }
                     },
                     style: ButtonStyle(
                       backgroundColor: MaterialStateProperty.all<Color>(Color(0xFF002882)),
@@ -59,18 +156,18 @@ class MainScreen extends StatelessWidget {
                       style: TextStyle(fontSize: 14, color: Colors.white),
                     ),
                   ),
-                  const SizedBox(width: 10), // Дополнительный отступ между кнопкой и изображением
-                  SvgPicture.asset('assets/Group 6356.svg', height: 40, width: 40,), // Путь к векторному изображению
+                  const SizedBox(width: 10),
+                  SvgPicture.asset('assets/Group 6356.svg', height: 30, width: 30,),
                 ],
               ),
             ),
           ),
           Positioned(
-            top: 200, // Позиция сверху для контейнера с тенью
-            left: 20, // Позиция слева для контейнера с тенью
+            top: 180,
+            left: 20,
             child: Container(
-              width: 345.0, // Ширина контейнера с тенью
-              height: 470.0, // Высота контейнера с тенью
+              width: 355.0,
+              height: 500.0,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10.0),
@@ -99,17 +196,16 @@ class MainScreen extends StatelessWidget {
                     Expanded(
                       child: ListView(
                         children: [
-                          _buildBranch('г.Москва, ул.Малая Пионерская', '5 км', () {print('клик');}),
-                          _buildBranch('г.Москва, ул.Малая Пионерская', '5 км, м.Бибирево', () {print('клик');}),
-                          _buildBranch('г.Москва, ул.Малая Пионерская', '5 км, м.Маяковская', () {print('клик');}),
-                          _buildBranch('г.Москва, ул.Малая Пионерская', '5 км, м.Маяковская', () {print('клик');}),
-                          _buildBranch('г.Москва, ул.Малая Пионерская', '5 км, м.Маяковская', () {print('клик');}),
-                          _buildBranch('г.Москва, ул.Малая Пионерская', '5 км, м.Маяковская', () {print('клик');}),
-                          _buildBranch('г.Москва, ул.Малая Пионерская', '5 км, м.Маяковская', () {print('клик');}),
-                          _buildBranch('г.Москва, ул.Малая Пионерская', '5 км, м.Маяковская', () {print('клик');}),
-                          _buildBranch('г.Москва, ул.Малая Пионерская', '5 км, м.Маяковская', () {print('клик');}),
-                          _buildBranch('г.Москва, ул.Малая Пионерская', '5 км, м.Маяковская', () {print('клик');}),
-                          // Добавьте больше отделений, если необходимо
+                          _buildBranch('г.Москва, ул.Малая Пионерская', '5 км', context),
+                          _buildBranch('г.Москва, ул.Малая Пионерская', '5 км, м.Бибирево', context),
+                          _buildBranch('г.Москва, ул.Малая Пионерская', '5 км, м.Маяковская', context),
+                          _buildBranch('г.Москва, ул.Малая Пионерская', '5 км, м.Маяковская', context),
+                          _buildBranch('г.Москва, ул.Малая Пионерская', '5 км, м.Маяковская', context),
+                          _buildBranch('г.Москва, ул.Малая Пионерская', '5 км, м.Маяковская', context),
+                          _buildBranch('г.Москва, ул.Малая Пионерская', '5 км, м.Маяковская', context),
+                          _buildBranch('г.Москва, ул.Малая Пионерская', '5 км, м.Маяковская', context),
+                          _buildBranch('г.Москва, ул.Малая Пионерская', '5 км, м.Маяковская', context),
+                          _buildBranch('г.Москва, ул.Малая Пионерская', '5 км, м.Маяковская', context),
                         ],
                       ),
                     ),
@@ -120,46 +216,41 @@ class MainScreen extends StatelessWidget {
           ),
         ],
       ),
-      bottomNavigationBar: Container(
-        color: Color(0xFF122790),
-        child: const Padding(
-          padding: EdgeInsets.symmetric(
-              horizontal: 15.0, vertical: 8.0
-          ),
-          child: GNav(
-              selectedIndex: 1,
-              gap: 8,
-              backgroundColor: Color(0xFF122790),
-              color: Colors.white,
-              activeColor: Colors.white,
-              tabBackgroundColor: Color(0x5000AAFF),
-              padding: EdgeInsets.all(16),
-              tabBorderRadius: 16,
-              tabs: [
-                GButton(
-                  icon: Icons.person,
-                  text: 'Профиль',
-                ),
-                GButton(
-                  icon: Icons.business,
-                  text: 'Отделения',
-                ),
-                GButton(
-                  icon: Icons.headset_mic,
-                  text: 'Поддержка',
-                ),
-              ]
-          ),
-        ),
+      bottomNavigationBar: CurvedNavigationBar(
+        backgroundColor: const Color(0xFFF3F7FA),
+        color: const Color(0xFF122790),
+        height: 65,
+        index: 1,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pushReplacementNamed(context, '/profile');
+          }
+          if (index == 2) {
+            Navigator.pushReplacementNamed(context, '/chat');
+          }
+        },
+        items: const [
+          Icon(Icons.account_circle_sharp, color: Colors.white),
+          Icon(Icons.business, color: Colors.white),
+          Icon(Icons.message, color: Colors.white),
+        ]
       ),
     );
   }
-  Widget _buildBranch(String salePointName, String address, Function() onTap) {
+
+  Widget _buildBranch(String salePointName, String address, context) {
     return Card(
       elevation: 1,
       margin: const EdgeInsets.only(left: 10, bottom: 5, right: 30),
       child: ListTile(
-        onTap: onTap,
+        onTap: () {
+          Navigator.pushNamed(context, '/helper');
+        },
+        leading: SvgPicture.asset(
+          'assets/Ellipse 10.svg',
+          width: 30,
+          height: 30,
+        ),
         title: Text(
           salePointName,
           style: const TextStyle(fontWeight: FontWeight.bold),

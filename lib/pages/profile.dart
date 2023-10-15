@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:curved_navigation_bar/curved_navigation_bar.dart';
+import 'package:hackathon/main.dart';
+import 'package:hackathon/pages/main_screen.dart';
+
 
 class Profile extends StatelessWidget {
   @override
@@ -15,7 +19,7 @@ class Profile extends StatelessWidget {
             child: Transform.rotate(
               angle: 0, // Угол поворота 0 градусов
               child: SvgPicture.asset(
-                'assets/Vector 42 (1).svg',
+                'assets/Vector 42.svg',
                 width: MediaQuery.of(context).size.width, // Установите ширину равной ширине экрана
                 height: 300.0, // Установите желаемую высоту
                 fit: BoxFit.cover,
@@ -23,7 +27,7 @@ class Profile extends StatelessWidget {
             ),
           ),
           Positioned(
-            top: 35,
+            top: 50,
             left: 20,
             child: SvgPicture.asset('assets/VTB_logo.svg', height: 30, width: 30),
           ),
@@ -84,7 +88,7 @@ class Profile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Мои отделения',
+                      'Мои талоны',
                       style: TextStyle(
                         color: Color(0xFF122790),
                         fontSize: 20,
@@ -140,6 +144,25 @@ class Profile extends StatelessWidget {
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: CurvedNavigationBar(
+          backgroundColor: const Color(0xFFF3F7FA),
+          color: const Color(0xFF122790),
+          height: 65,
+          index: 0,
+          onTap: (index) {
+            if (index == 1) {
+              Navigator.pushReplacementNamed(context, '/main');
+            }
+            if (index == 2) {
+              Navigator.pushReplacementNamed(context, '/chat');
+            }
+          },
+          items: const [
+            Icon(Icons.account_circle_sharp, color: Colors.white),
+            Icon(Icons.business, color: Colors.white),
+            Icon(Icons.message, color: Colors.white),
+          ]
       ),
     );
   }
